@@ -26,9 +26,9 @@ def read_agg_image(capture, full_scale=False):
   if full_scale:
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    agg_image = np.zeros(shape=(frame_height, frame_width*frame_count, 3))
+    agg_image = np.zeros(dtype=np.uint8, shape=(frame_height, frame_width*frame_count, 3))
   else:
-    agg_image = np.zeros(shape=(1, frame_count, 3))
+    agg_image = np.zeros(dtype=np.uint8, shape=(1, frame_count, 3))
   success, image = capture.read()
   count = 0
   while success:
@@ -45,7 +45,7 @@ def read_agg_image(capture, full_scale=False):
 def pad_resize(image, width, frame_width=1, frame_height=1):
   frame_count = ((image.size // frame_width) // frame_height) // 3
   height = math.ceil(frame_count / width)
-  ret_image = np.zeros(shape=(height * frame_height, math.ceil(width) * frame_width, 3))
+  ret_image = np.zeros(dtype=np.uint8, shape=(height * frame_height, math.ceil(width) * frame_width, 3))
   x = 0
   y = 0
   accumulator = 0
@@ -198,7 +198,7 @@ def main():
   while True:
     if redraw:
       final_image = pad_resize(agg_image, final_width, frame_width, frame_height)
-      cv2.imshow('Composite Image', final_image / 255)
+      cv2.imshow('Composite Image', final_image)
       redraw = False
     key = cv2.waitKey(100)
     if key == ord('w') or key == 82:
