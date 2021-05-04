@@ -137,16 +137,31 @@ def main():
       return    # Exit prematurely
   # TODO: Display warning when out_file already exists (y/n)?
   if full_scale and (in_file.endswith('.png') or in_file.endswith('jpg')):
-    print('ERROR: Full scale mode not compatible when input file is an image')
+    print('ERROR: Full scale mode not available when input file is an image')
     return    # Exit prematurely
   if no_gui and final_width <= 0:
     print('WARNING: Auto mode enabled with no specified width (square will be used)')
+
+  # Check if input file exists
+  try:
+    open(in_file)
+  except FileNotFoundError:
+    print('ERROR: Input file not found:', in_file)
+    return    # Exit prematurely
 
   # Generate aggregate image (composite with height=1) from input file
   agg_image = None
   frame_width = 1
   frame_height = 1
-  if in_file.endswith('.mp4') or in_file.endswith('.mkv') or in_file.endswith('.webm'):
+  if in_file.lower().endswith('.png') or in_file.lower().endswith('.jpg') or in_file.lower().endswith('.jpeg'):
+    read_image = cv2.imread(in_file, cv2.IMREAD_COLOR)
+    if read_image is None:
+      print('ERROR: Couldn\'t open image:', in_file)
+      return    # Exit prematurely
+    width, height, channels = read_image.shape
+    agg_image = read_image.reshape(1, width * height, channels)
+    print('Read %d frames from %s' % (agg_image.shape[1], in_file))
+  else:
     capture = cv2.VideoCapture(in_file)
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -154,18 +169,13 @@ def main():
     if frame_count == 0:
       print('ERROR: Couldn\'t open video:', in_file)
       return    # Exit prematurely
-    print('Reading %d frames at %dx%d from %s...' %
+    if full_scale:
+      print('Reading %d frames at %dx%d from %s...' %
           (frame_count, frame_width, frame_height, in_file), end='', flush=True)
+    else:
+      print('Reading %d frames from %s...' % (frame_count, in_file), end='', flush=True)
     agg_image = read_agg_image(capture, full_scale)
     print('SUCCESS')
-  else:
-    read_image = cv2.imread(in_file, cv2.IMREAD_COLOR)
-    if read_image is None:
-      print('ERROR: Couldn\'t open image: %s', in_file)
-      return    # Exit prematurely
-    width, height, channels = read_image.shape
-    agg_image = read_image.reshape(1, width * height, channels)
-    print('Read %d frames from \'%s\'' % (agg_image.shape[1], in_file))
   if not full_scale:
     frame_width = 1
     frame_height = 1
@@ -178,7 +188,7 @@ def main():
   if no_gui:
     final_image = pad_resize(agg_image, final_width, frame_width, frame_height)
     cv2.imwrite(out_file, final_image)
-    print('Image saved to \'%s\'' % out_file)
+    print('Image saved to', out_file)
     return
 
   # Enter gui mode
@@ -209,7 +219,7 @@ def main():
       print('width=%r, step_size=%r' % (final_width, step_size))
     elif key == 13:
       cv2.imwrite(out_file, final_image)
-      print('Image saved to \'%s\'' % out_file)
+      print('Image saved to', out_file)
     elif key == 27:
       cv2.destroyAllWindows()
       return
