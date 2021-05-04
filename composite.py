@@ -182,7 +182,7 @@ def main():
 
   # Calculate a good starting width (if not already specified by user)
   if final_width <= 0:
-    final_width = int(math.ceil(math.sqrt(agg_image.shape[1])))
+    final_width = int(math.ceil(math.sqrt(agg_image.shape[1] / agg_image.shape[0])))
 
   # If auto mode is enabled, make one composite and exit
   if no_gui:
