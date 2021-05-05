@@ -1,6 +1,8 @@
 # composite.py
 Small GUI for generating composite images
 
+![BRINE width=540.7](https://github.com/applesdom/composite/blob/main/samples/BRINE_540_7.png)
+
 ### Installation
 
 Written for Python 3.6.9. Use pip to install required packages:
