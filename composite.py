@@ -42,10 +42,10 @@ def read_agg_image(capture, full_scale=False):
   return agg_image
 
 # Resize an image to given width, using compositing rules
-def pad_resize(image, width, frame_width=1, frame_height=1):
+def pad_resize(image, mega_width, frame_width=1, frame_height=1):
   frame_count = ((image.size // frame_width) // frame_height) // 3
-  height = math.ceil(frame_count / width)
-  ret_image = np.zeros(dtype=np.uint8, shape=(height * frame_height, math.ceil(width) * frame_width, 3))
+  height = math.ceil(frame_count / (mega_width / 1000.0))
+  ret_image = np.zeros(dtype=np.uint8, shape=(height * frame_height, math.ceil(mega_width / 1000.0) * frame_width, 3))
   x = 0
   y = 0
   accumulator = 0
@@ -54,10 +54,10 @@ def pad_resize(image, width, frame_width=1, frame_height=1):
     x_offset = x*frame_width
     ret_image[y*frame_height:(y+1)*frame_height, x*frame_width:(x+1)*frame_width] = \
         image[0:frame_height, i*frame_width:(i+1)*frame_width]
-    accumulator += 1
+    accumulator += 1000
     x += 1
-    if accumulator >= width:
-      accumulator -= width
+    if accumulator >= mega_width:
+      accumulator -= mega_width
       x = 0
       y += 1
   return ret_image
@@ -183,6 +183,7 @@ def main():
   # Calculate a good starting width (if not already specified by user)
   if final_width <= 0:
     final_width = int(math.ceil(math.sqrt(agg_image.shape[1] / agg_image.shape[0])))
+  final_width = int(1000 * final_width)   # Convert to mega-width
 
   # If auto mode is enabled, make one composite and exit
   if no_gui:
@@ -194,7 +195,7 @@ def main():
   # Enter gui mode
   cv2.namedWindow('Composite Image', cv2.WINDOW_NORMAL)
   redraw = True
-  step_size = 1
+  step_size = 1000
   while True:
     if redraw:
       final_image = pad_resize(agg_image, final_width, frame_width, frame_height)
@@ -202,21 +203,23 @@ def main():
       redraw = False
     key = cv2.waitKey(100)
     if key == ord('w') or key == 82:
-      step_size = 10*step_size
+      step_size = int(min(10000000, 10*step_size))
     elif key == ord('s') or key == 84:
-      step_size = step_size / 10
+      step_size = int(max(1, step_size // 10))
     if key == ord('a') or key == 81:
       final_width -= step_size
-      if final_width < 1:
-        final_width = 1
+      if final_width < 1000:
+        final_width = 1000
       redraw = True
     elif key == ord('d') or key == 83:
       final_width += step_size
-      if final_width > agg_image.shape[1]:
-        final_width = agg_image.shape[1]
+      if final_width > 1000*agg_image.shape[1]:
+        final_width = 1000*agg_image.shape[1]
       redraw = True
     elif key == ord('q') or key == 83:
-      print('width=%r, step_size=%r' % (final_width, step_size))
+      print_width = final_width // 1000 if final_width % 1000 == 0 else final_width / 1000
+      print_step_size = step_size // 1000 if step_size >= 1000 else step_size / 1000
+      print('width=%r, step_size=%r' % (print_width, print_step_size))
     elif key == 13:
       cv2.imwrite(out_file, final_image)
       print('Image saved to', out_file)
