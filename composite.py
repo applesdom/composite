@@ -62,10 +62,31 @@ def pad_resize(image, mega_width, frame_width=1, frame_height=1):
       y += 1
   return ret_image
 
+# Generate a unique output file name, using "out.png" as template
+def get_unique_out_file():
+  out_file = ''
+  n = 0
+  exists = True
+  while exists:
+    out_file = 'out%d.png' % n if n > 0 else 'out.png'
+    try:
+      open(out_file)
+      n += 1
+    except FileNotFoundError:
+      exists = False
+  return out_file
+
+  # Check if input file exists
+  try:
+    open(in_file)
+  except FileNotFoundError:
+    print('ERROR: Input file not found:', in_file)
+    return    # Exit prematurely
+
 def main():
   # Initialize arguments to be parsed from command line
   in_file = None
-  out_file = 'out.png'
+  out_file = ''
   full_scale = False
   final_width = -1
   no_gui = False
@@ -188,8 +209,9 @@ def main():
   # If auto mode is enabled, make one composite and exit
   if no_gui:
     final_image = pad_resize(agg_image, final_width, frame_width, frame_height)
-    cv2.imwrite(out_file, final_image)
-    print('Image saved to', out_file)
+    final_out_file = get_unique_out_file() if out_file == '' else out_file
+    cv2.imwrite(final_out_file, final_image)
+    print('Image saved to', final_out_file)
     return
 
   # Enter gui mode
@@ -221,8 +243,9 @@ def main():
       print_step_size = step_size // 1000 if step_size >= 1000 else step_size / 1000
       print('width=%r, step_size=%r' % (print_width, print_step_size))
     elif key == 13:
-      cv2.imwrite(out_file, final_image)
-      print('Image saved to', out_file)
+      final_out_file = get_unique_out_file() if out_file == '' else out_file
+      cv2.imwrite(final_out_file, final_image)
+      print('Image saved to', final_out_file)
     elif key == 27:
       cv2.destroyAllWindows()
       return
