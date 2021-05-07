@@ -25,6 +25,7 @@ frame can also be generated.
         -f                Full-scale composites will be generated  
         -w <width>        Composites will default to this width, in frames  
         -a                Automatically generate a composite, no gui  
+        -r <start>:<end>  Only use pixels in this index range (including start)
     Controls:  
         A, D              Decrease/increase composite width  
         W, S              Increase/decrease step size  

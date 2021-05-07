@@ -9,6 +9,7 @@
 #     -f                Full-scale composites will be generated
 #     -w <width>        Composites will default to this width, in frames
 #     -a                Automatically generate a composite, no gui
+#     -r <start>:<end>  Only use pixels in this index range (including start)
 # Controls:
 #     A, D              Decrease/increase composite width
 #     W, S              Increase/decrease step size
@@ -21,17 +22,19 @@ import numpy as np
 import cv2
 
 # Convert a video stream to an aggregate image (composite with height=1)
-def read_agg_image(capture, full_scale=False):
+def read_agg_image(capture, full_scale=False, end=None):
   frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+  if end is None:
+    end = frame_count
   if full_scale:
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    agg_image = np.zeros(dtype=np.uint8, shape=(frame_height, frame_width*frame_count, 3))
+    agg_image = np.zeros(dtype=np.uint8, shape=(frame_height, frame_width*end, 3))
   else:
-    agg_image = np.zeros(dtype=np.uint8, shape=(1, frame_count, 3))
+    agg_image = np.zeros(dtype=np.uint8, shape=(1, end, 3))
   success, image = capture.read()
   count = 0
-  while success:
+  while success and count < end:
     if full_scale:
       agg_image[0:frame_height, frame_width*count:frame_width*(count+1)] = image
     else:
@@ -90,6 +93,8 @@ def main():
   full_scale = False
   final_width = -1
   no_gui = False
+  start_index = None
+  end_index = None
   usage_message = ('Usage: python3 composite.py [options] <input_file>\n'
                    'Options:\n'
                    '    -h                Print this message, then exit\n'
@@ -97,6 +102,7 @@ def main():
                    '    -f                Full-scale composites will be generated\n'
                    '    -w <width>        Composites will default to this width, in frames\n'
                    '    -a                Automatically generate a composite, no gui\n'
+                   '    -r <start>:<end>  Only use pixels in this index range (including start)\n'
                    'Controls:\n'
                    '    A, D              Decrease/increase composite width\n'
                    '    W, S              Increase/decrease step size\n'
@@ -137,6 +143,19 @@ def main():
           return    # Exit prematurely
     elif sys.argv[i] == '-a':
       no_gui = True
+    elif sys.argv[i] == '-r':
+      i += 1
+      if i >= len(sys.argv):
+        print('ERROR: Must specify a range after -r')
+        return    # Exit prematurely
+      else:
+        try:
+          split = sys.argv[i].split(':')
+          start_index = 0 if split[0] == '' else int(split[0])
+          end_index = -1 if split[1] == '' else int(split[1])
+        except (ValueError, IndexError) as e:
+          print('ERROR: Range must use format <start>:<end>')
+          return    # Exit prematurely
     elif sys.argv[i].startswith('-') and len(sys.argv[i]) == 2:
       print('ERROR: Unrecognized option:', sys.argv[i])
       return    # Exit prematurely
@@ -185,6 +204,7 @@ def main():
       return    # Exit prematurely
     width, height, channels = read_image.shape
     agg_image = read_image.reshape(1, width * height, channels)
+    agg_image = agg_image[0:1, 0:end_index, 0:3]
     print('Read %d frames from %s' % (agg_image.shape[1], in_file))
   else:
     capture = cv2.VideoCapture(in_file)
@@ -194,16 +214,28 @@ def main():
     if frame_count == 0:
       print('ERROR: Couldn\'t open video:', in_file)
       return    # Exit prematurely
+    if not end_index is None:
+      if end_index < 0:
+        frame_count += end_index
+      elif end_index < frame_count:
+        frame_count = end_index
     if full_scale:
       print('Reading %d frames at %dx%d from %s...' %
           (frame_count, frame_width, frame_height, in_file), end='', flush=True)
     else:
       print('Reading %d frames from %s...' % (frame_count, in_file), end='', flush=True)
-    agg_image = read_agg_image(capture, full_scale)
+    agg_image = read_agg_image(capture, full_scale, end=frame_count)
     print('SUCCESS')
   if not full_scale:
     frame_width = 1
     frame_height = 1
+
+  # Crop aggregate image according to range specifications from user
+  if not start_index is None:
+    agg_image = agg_image[0:frame_height, start_index*frame_width:, 0:3]
+  if agg_image.shape[1] <= 0:
+    print('ERROR: Invalid range specification for input data: %d:%d' % (start_index, end_index))
+    return    # Exit prematurely
 
   # Calculate a good starting width (if not already specified by user)
   if final_width <= 0:
