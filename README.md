@@ -38,3 +38,4 @@ frame can also be generated.
     python3 composite.py com.png -o new.png           # Open GUI with "com.png" as input, write reshaped images to "new.png"
     python3 composite.py LOCK.mkv -a -f -w 197.36     # Automatically generate a full-scale composite for "LOCK.mkv" using
                                                       # width=197.36 (GUI will not be shown)
+    python3 composite.py og.mp4 -r 1247:1397:         # Open GUI with "og.mp4" as input, only use frames 1247 to 1397
