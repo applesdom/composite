@@ -156,6 +156,10 @@ def main():
     else:
       print('ERROR: Must specify an input file name')
       return    # Exit prematurely
+  if not (out_file == '' or out_file.lower().endswith('.png') or \
+          out_file.lower().endswith('.jpg') or out_file.lower().endswith('.jpeg')):
+    print('ERROR: Output file must be a valid image format (.png or .jpg)')
+    return    # Exit prematurely
   # TODO: Display warning when out_file already exists (y/n)?
   if full_scale and (in_file.endswith('.png') or in_file.endswith('jpg')):
     print('ERROR: Full scale mode not available when input file is an image')
