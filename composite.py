@@ -35,8 +35,8 @@ def read_agg_image(capture, full_scale=False):
     if full_scale:
       agg_image[0:frame_height, frame_width*count:frame_width*(count+1)] = image
     else:
-      mini_image = cv2.resize(image, (1, 1))
-      agg_image[0, count] = mini_image
+      mean_color = image.mean(axis=0).mean(axis=0)
+      agg_image[0, count] = mean_color
     success, image = capture.read()
     count += 1
   return agg_image
