@@ -46,23 +46,28 @@ def read_agg_image(capture, full_scale=False, end=None):
 
 # Resize an image to given width, using compositing rules
 def pad_resize(image, mega_width, frame_width=1, frame_height=1):
-  frame_count = ((image.size // frame_width) // frame_height) // 3
+  frame_count = image.shape[1] // frame_width
   height = math.ceil(frame_count / (mega_width / 1000.0))
-  ret_image = np.zeros(dtype=np.uint8, shape=(height * frame_height, math.ceil(mega_width / 1000.0) * frame_width, 3))
-  x = 0
-  y = 0
-  accumulator = 0
-  for i in range(frame_count):
-    y_offset = y*frame_height
-    x_offset = x*frame_width
-    ret_image[y*frame_height:(y+1)*frame_height, x*frame_width:(x+1)*frame_width] = \
-        image[0:frame_height, i*frame_width:(i+1)*frame_width]
-    accumulator += 1000
-    x += 1
-    if accumulator >= mega_width:
-      accumulator -= mega_width
-      x = 0
-      y += 1
+  if frame_width == 1 and frame_height == 1 and mega_width % 1000 == 0:
+    pad_image = np.zeros(dtype=np.uint8, shape=(1, height * math.ceil(mega_width / 1000.0), 3))
+    pad_image[0:1, 0:frame_count, 0:3] = image[0:1, 0:frame_count, 0:3]
+    ret_image = pad_image.reshape(height, math.ceil(mega_width / 1000.0), 3)
+  else:
+    ret_image = np.zeros(dtype=np.uint8, shape=(height * frame_height, math.ceil(mega_width / 1000.0) * frame_width, 3))
+    x = 0
+    y = 0
+    accumulator = 0
+    for i in range(frame_count):
+      y_offset = y*frame_height
+      x_offset = x*frame_width
+      ret_image[y*frame_height:(y+1)*frame_height, x*frame_width:(x+1)*frame_width] = \
+          image[0:frame_height, i*frame_width:(i+1)*frame_width]
+      accumulator += 1000
+      x += 1
+      if accumulator >= mega_width:
+        accumulator -= mega_width
+        x = 0
+        y += 1
   return ret_image
 
 # Generate a unique output file name, using "out.png" as template
