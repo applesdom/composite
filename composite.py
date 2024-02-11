@@ -264,7 +264,7 @@ def main():
       final_image = pad_resize(agg_image, final_width, frame_width, frame_height)
       cv2.imshow('Composite Image', final_image)
       redraw = False
-    key = cv2.waitKey(100)
+    key = cv2.waitKey(0)
     if key == ord('w') or key == 82:
       step_size = int(min(10000000, 10*step_size))
     elif key == ord('s') or key == 84:
