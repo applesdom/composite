@@ -44,7 +44,10 @@ def read_agg_image(capture, full_scale=False, end=None):
       agg_image[0, count] = mean_color
     success, image = capture.read()
     count += 1
-  return agg_image
+  if full_scale:
+    return agg_image[:, 0:frame_width*count, :]
+  else:
+    return agg_image[:, 0:count, :]
 
 # Resize an image to given width, using compositing rules
 def pad_resize(image, mega_width, frame_width=1, frame_height=1):
