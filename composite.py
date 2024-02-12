@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Written for Python 3.6.9
 # Install required packages (numpy and opencv) with pip:
 #     pip3 install opencv-python
